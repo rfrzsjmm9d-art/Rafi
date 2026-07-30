@@ -530,4 +530,210 @@
       document.getElementById('counter-value').innerText = "1";
     });
 </script>
+<!-- TOMATEN-SCHMEISS-MODUS & ZÄHLER -->
+<style>
+  /* Tomaten-Anzeige oben fixiert */
+  .tomato-bar {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 18px;
+    border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #2c3e50;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(5px);
+    border: 2px solid #ff4757;
+  }
+
+  .tomato-btn {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    transition: transform 0.1s, background 0.2s;
+  }
+
+  .tomato-btn:hover {
+    background: #ff6b81;
+    transform: scale(1.05);
+  }
+
+  /* Fliegende Tomate */
+  .flying-tomato {
+    position: fixed;
+    font-size: 2rem;
+    pointer-events: none;
+    z-index: 10000;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Tomaten-Splat (Matsch-Fleck) */
+  .splat-mark {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    background: radial-gradient(circle, #ff2a2a 30%, #d63031 70%, transparent 100%);
+    border-radius: 40% 60% 70% 30% / 50% 30% 70% 50%;
+    opacity: 0.9;
+    animation: fadeSplat 4s forwards;
+  }
+
+  /* Spritzer um den Hauptfleck */
+  .splat-drip {
+    position: absolute;
+    background: #d63031;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  @keyframes fadeSplat {
+    0% { transform: scale(0.2) rotate(0deg); opacity: 0.95; }
+    15% { transform: scale(1.1) rotate(10deg); }
+    30% { transform: scale(1) rotate(5deg); }
+    70% { opacity: 0.8; }
+    100% { opacity: 0; transform: scale(0.9) translateY(15px); }
+  }
+</style>
+
+<!-- Infoleiste oben rechts -->
+<div class="tomato-bar">
+  <span>🍅 Tomaten geworfen: <strong id="tomato-count" style="color: #ff4757;">0</strong></span>
+  <span>| 👀 Besuche: <strong id="counter-value">...</strong></span>
+  <button class="tomato-btn" id="toggle-tomato-btn">Schmeiß-Modus: AN</button>
+</div>
+
+<script>
+  let tomatoCount = 0;
+  let tomatoMode = true;
+
+  const countEl = document.getElementById('tomato-count');
+  const toggleBtn = document.getElementById('toggle-tomato-btn');
+
+  // Ein/Ausschalten des Tomaten-Modus
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Verhindert, dass beim Klick auf den Button eine Tomate fliegt
+    tomatoMode = !tomatoMode;
+    toggleBtn.innerText = `Schmeiß-Modus: ${tomatoMode ? 'AN' : 'AUS'}`;
+    toggleBtn.style.background = tomatoMode ? '#ff4757' : '#74b9ff';
+  });
+
+  // --- AUDIO SYNTHESIZER (Matsch-Sound) ---
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playSplatSound() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+
+    // Tiefer Matsch-Aufprall
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  // --- TOMATEN-WURF LOGIK ---
+  document.addEventListener('click', (e) => {
+    if (!tomatoMode) return;
+
+    // Klicks auf Buttons/Links nicht mit Tomaten blockieren
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('.tomato-bar')) return;
+
+    tomatoCount++;
+    countEl.innerText = tomatoCount;
+
+    const targetX = e.clientX;
+    const targetY = e.clientY;
+
+    // 1. Die Tomate fliegt von unten los
+    const tomato = document.createElement('div');
+    tomato.className = 'flying-tomato';
+    tomato.innerText = '🍅';
+    tomato.style.left = (targetX - 20) + 'px';
+    tomato.style.top = (window.innerHeight + 50) + 'px';
+    document.body.appendChild(tomato);
+
+    // Flug-Animation Richtung Klick-Position
+    requestAnimationFrame(() => {
+      tomato.style.top = (targetY - 20) + 'px';
+      tomato.style.transform = 'rotate(360deg) scale(1.3)';
+    });
+
+    // 2. Aufprall (Splat) nach 300ms Flugzeit
+    setTimeout(() => {
+      tomato.remove();
+      playSplatSound();
+      if (navigator.vibrate) navigator.vibrate(50);
+
+      createSplatMark(targetX, targetY);
+    }, 300);
+  });
+
+  // 3. Matsch-Fleck (Splat) erstellen
+  function createSplatMark(x, y) {
+    const splat = document.createElement('div');
+    splat.className = 'splat-mark';
+    
+    const size = Math.random() * 40 + 60; // Größe zwischen 60px und 100px
+    splat.style.width = size + 'px';
+    splat.style.height = size + 'px';
+    splat.style.left = (x - size / 2) + 'px';
+    splat.style.top = (y - size / 2) + 'px';
+
+    // Kleine Tropfen/Spritzer rundherum
+    for (let i = 0; i < 6; i++) {
+      const drip = document.createElement('div');
+      drip.className = 'splat-drip';
+      const dripSize = Math.random() * 10 + 6;
+      drip.style.width = dripSize + 'px';
+      drip.style.height = dripSize + 'px';
+
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.random() * (size / 1.5) + 10;
+      drip.style.left = (size / 2 + Math.cos(angle) * dist) + 'px';
+      drip.style.top = (size / 2 + Math.sin(angle) * dist) + 'px';
+
+      splat.appendChild(drip);
+    }
+
+    document.body.appendChild(splat);
+
+    // Nach 4 Sekunden aufräumen
+    setTimeout(() => splat.remove(), 4000);
+  }
+
+  // --- ÖFFENTLICHER BESUCHERZÄHLER ---
+  const UNIQUE_KEY = 'mein-einzigartiger-schluessel-12345';
+
+  fetch(`https://countapi.mileshilliard.com/api/v1/hit/${UNIQUE_KEY}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('counter-value').innerText = data.value;
+    })
+    .catch(() => {
+      document.getElementById('counter-value').innerText = "1";
+    });
+</script>
 
