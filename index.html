@@ -1,1 +1,242 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phillipp Rafael De Souza Dietz – Profil</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #202124;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
 
+        .header-bar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-bar h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #1a73e8;
+        }
+
+        .header-bar .subtitle {
+            color: #5f6368;
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        nav {
+            background-color: #ffffff;
+            text-align: center;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        nav a {
+            color: #1a73e8;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        nav a:hover {
+            background-color: #e8f0fe;
+        }
+
+        .main-container {
+            max-width: 850px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Fotogalerie im Kasten-Stil */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .photo-card {
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .photo-card span {
+            display: block;
+            font-size: 0.85rem;
+            color: #5f6368;
+            margin-top: 6px;
+        }
+
+        /* Info-Boxen */
+        .section-box {
+            background: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .section-box h2 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            color: #202124;
+            border-bottom: 2px solid #e8f0fe;
+            padding-bottom: 8px;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            padding: 8px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #3c4043;
+            width: 160px;
+            display: inline-block;
+        }
+
+        .social-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .social-btn {
+            background-color: #f1f3f4;
+            color: #1a73e8;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #dadce0;
+        }
+
+        .social-btn:hover {
+            background-color: #e8f0fe;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #70757a;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 40px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>Phillipp Rafael De Souza Dietz</h1>
+        <div class="subtitle">Rufname: <strong>Rafi</strong> | Steckbrief & Übersicht</div>
+    </div>
+
+    <nav>
+        <a href="index.html">Über mich</a>
+        <a href="skills.html">Skills & Video</a>
+    </nav>
+
+    <div class="main-container">
+
+        <div class="photo-grid">
+            <div class="photo-card">
+                <img src="image1.png" alt="Rafi Sonnenbrille">
+                <span>Rafi</span>
+            </div>
+            <div class="photo-card">
+                <img src="image2.png" alt="Rafi Spezi Krone">
+                <span>Ein bisschen Humor muss sein</span>
+            </div>
+            <div class="photo-card">
+                <img src="image3.png" alt="Rafi Draußen">
+                <span>Unterwegs</span>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <h2>Persönliche Angaben</h2>
+            <ul class="info-list">
+                <li><span class="info-label">Alter:</span> 15 Jahre</li>
+                <li><span class="info-label">Geburtstag:</span> 10. Januar</li>
+                <li><span class="info-label">Wohnort:</span> Rheinland-Pfalz, Deutschland</li>
+                <li><span class="info-label">Sprachen:</span> Deutsch (Muttersprache), Englisch, etwas Portugiesisch, leichtes Französisch</li>
+                <li><span class="info-label">Eigenschaften:</span> Sympathisch, humorvoll, handwerklich interessiert</li>
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <h2>Schule & Ausbildung</h2>
+            <ul class="info-list">
+                <li><span class="info-label">Grundschulzeit:</span> Erste sportliche Aktivitäten (Fußball, Tischtennis, Handball)</li>
+                <li><span class="info-label">Weiterführend:</span> 1 Jahr Realschule $\rightarrow$ 3 Jahre Gymnasium $\rightarrow$ aktuell 10. Klasse Realschule</li>
+                <li><span class="info-label">Zukunftsziel:</span> Ausbildung zum Schreiner</li>
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <h2>Hobbys & Engagement</h2>
+            <ul class="info-list">
+                <li><span class="info-label">Sportvereine:</span> 2 Jahre Fußball, 1 Jahr Tischtennis, 6 Jahre Handball</li>
+                <li><span class="info-label">Ehrenamt:</span> 3 Jahre bei der Freiwilligen Jugendfeuerwehr</li>
+                <li><span class="info-label">Handwerk:</span> Bau von eigenen Projekten (z.B. eine selbstgebaute Holzgitarre)</li>
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <h2>Social Media Links</h2>
+            <div class="social-buttons">
+                <a href="https://www.tiktok.com/@rafidtz" target="_blank" class="social-btn">TikTok (@rafidtz)</a>
+                <a href="https://www.instagram.com/rafi_dtz?igsh=bnAzY2R0MGZ2c3hx&utm_source=qr" target="_blank" class="social-btn">Instagram</a>
+                <a href="https://www.snapchat.com/add/rafidtz?share_id=227v5OiOReO5EowQcM3qpg&locale=de_DE" target="_blank" class="social-btn">Snapchat</a>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2026 Phillipp Rafael De Souza Dietz
+    </footer>
+
+</body>
+</html>
