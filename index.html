@@ -313,226 +313,9 @@
     font-weight: bold;
   }
 </style>
-
-<div class="game-container">
-  <h3>🔴 4 Gewinnt gegen KI 🟡</h3>
-  <div class="status-text" id="status">Du bist dran (Rot)!</div>
-  
-  <div class="board" id="board"></div>
-
-  <button class="restart-btn" onclick="resetGame()">Neues Spiel starten</button>
-
-  <hr style="border:0; border-top: 1px solid #ccc; margin: 15px 0;">
-
-  <!-- Öffentlicher Zähler -->
-  <div class="visitor-count">
-    👀 Seitenaufrufe: <span id="counter-value">Lädt...</span>
-  </div>
-</div>
-
-<script>
-  const ROWS = 6;
-  const COLS = 7;
-  let boardState = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
-  let gameOver = false;
-
-  const boardEl = document.getElementById('board');
-  const statusEl = document.getElementById('status');
-
-  // --- AUDIO SYNTHESIZER (Klack-Sound) ---
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  function playDropSound(isRed) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    const freq = isRed ? 320 : 240;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
-
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.12);
-  }
-
-  // --- SPIELFELD INITIALISIEREN ---
-  function createBoard() {
-    boardEl.innerHTML = '';
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.col = c;
-        cell.addEventListener('click', () => handlePlayerMove(c));
-        boardEl.appendChild(cell);
-      }
-    }
-  }
-
-  function updateBoardUI() {
-    const cells = boardEl.children;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const index = r * COLS + c;
-        cells[index].className = 'cell';
-        if (boardState[r][c] === 1) cells[index].classList.add('red');
-        if (boardState[r][c] === 2) cells[index].classList.add('yellow');
-      }
-    }
-  }
-
-  // --- ZUG AUSFÜHREN ---
-  function dropDisc(col, player) {
-    for (let r = ROWS - 1; r >= 0; r--) {
-      if (boardState[r][col] === 0) {
-        boardState[r][col] = player;
-        playDropSound(player === 1);
-        return r;
-      }
-    }
-    return -1; // Spalte voll
-  }
-
-  function handlePlayerMove(col) {
-    if (gameOver) return;
-
-    const rowPlaced = dropDisc(col, 1);
-    if (rowPlaced === -1) return; // Ungültiger Zug
-
-    updateBoardUI();
-
-    if (checkWin(1)) {
-      statusEl.innerText = "🎉 Du hast gewonnen!";
-      gameOver = true;
-      return;
-    }
-
-    if (isBoardFull()) {
-      statusEl.innerText = "🤝 Unentschieden!";
-      gameOver = true;
-      return;
-    }
-
-    statusEl.innerText = "🤖 KI überlegt...";
-    gameOver = true; // Sperrt Eingaben kurz
-
-    setTimeout(aiMove, 600);
-  }
-
-  // --- KI LOGIK ---
-  function aiMove() {
-    // 1. Prüfen, ob KI direkt gewinnen kann
-    let bestCol = findSmartMove(2);
-    // 2. Prüfen, ob KI den Spieler am Gewinnen hindern muss (Blocken)
-    if (bestCol === -1) bestCol = findSmartMove(1);
-    // 3. Wenn nichts Besonderes ansteht: Zufällige verfügbare Spalte (Mitte bevorzugt)
-    if (bestCol === -1) {
-      const validCols = [];
-      for (let c = 0; c < COLS; c++) {
-        if (boardState[0][c] === 0) validCols.push(c);
-      }
-      bestCol = validCols[Math.floor(Math.random() * validCols.length)];
-    }
-
-    dropDisc(bestCol, 2);
-    updateBoardUI();
-
-    if (checkWin(2)) {
-      statusEl.innerText = "🤖 Die KI hat gewonnen!";
-    } else if (isBoardFull()) {
-      statusEl.innerText = "🤝 Unentschieden!";
-    } else {
-      statusEl.innerText = "Du bist dran (Rot)!";
-      gameOver = false;
-    }
-  }
-
-  function findSmartMove(player) {
-    for (let c = 0; c < COLS; c++) {
-      if (boardState[0][c] === 0) {
-        // Simuliere den Zug
-        let rPlaced = -1;
-        for (let r = ROWS - 1; r >= 0; r--) {
-          if (boardState[r][c] === 0) {
-            boardState[r][c] = player;
-            rPlaced = r;
-            break;
-          }
-        }
-        const win = checkWin(player);
-        boardState[rPlaced][c] = 0; // Rückgängig machen
-        if (win) return c;
-      }
-    }
-    return -1;
-  }
-
-  // --- GEWINN-PRÜFUNG ---
-  function checkWin(player) {
-    // Waagerecht
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS - 3; c++) {
-        if (boardState[r][c] === player && boardState[r][c+1] === player &&
-            boardState[r][c+2] === player && boardState[r][c+3] === player) return true;
-      }
-    }
-    // Senkrecht
-    for (let r = 0; r < ROWS - 3; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (boardState[r][c] === player && boardState[r+1][c] === player &&
-            boardState[r+2][c] === player && boardState[r+3][c] === player) return true;
-      }
-    }
-    // Diagonale (nach unten rechts)
-    for (let r = 0; r < ROWS - 3; r++) {
-      for (let c = 0; c < COLS - 3; c++) {
-        if (boardState[r][c] === player && boardState[r+1][c+1] === player &&
-            boardState[r+2][c+2] === player && boardState[r+3][c+3] === player) return true;
-      }
-    }
-    // Diagonale (nach oben rechts)
-    for (let r = 3; r < ROWS; r++) {
-      for (let c = 0; c < COLS - 3; c++) {
-        if (boardState[r][c] === player && boardState[r-1][c+1] === player &&
-            boardState[r-2][c+2] === player && boardState[r-3][c+3] === player) return true;
-      }
-    }
-    return false;
-  }
-
-  function isBoardFull() {
-    return boardState[0].every(cell => cell !== 0);
-  }
-
-  function resetGame() {
-    boardState = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
-    gameOver = false;
-    statusEl.innerText = "Du bist dran (Rot)!";
-    updateBoardUI();
-  }
-
-  // Start
-  createBoard();
-
-  // --- ÖFFENTLICHER BESUCHERZÄHLER ---
-  const UNIQUE_KEY = 'mein-einzigartiger-schluessel-12345';
-
-  fetch(`https://countapi.mileshilliard.com/api/v1/hit/${UNIQUE_KEY}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('counter-value').innerText = data.value;
-    })
-    .catch(() => {
-      document.getElementById('counter-value').innerText = "1";
-    });
-</script>
-<!-- TOMATEN-SCHMEISS-MODUS & ZÄHLER -->
+<!-- COMBINED 4-GEWINNT & TOMATEN-SCHMEISS-MODUS -->
 <style>
-  /* Tomaten-Anzeige oben fixiert */
+  /* 1. TOMATEN LEISTE OBEN RECHTS */
   .tomato-bar {
     position: fixed;
     top: 15px;
@@ -570,7 +353,7 @@
     transform: scale(1.05);
   }
 
-  /* Fliegende Tomate */
+  /* Fliegende Tomate & Matsch */
   .flying-tomato {
     position: fixed;
     font-size: 2rem;
@@ -579,7 +362,6 @@
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
-  /* Tomaten-Splat (Matsch-Fleck) */
   .splat-mark {
     position: fixed;
     pointer-events: none;
@@ -590,7 +372,6 @@
     animation: fadeSplat 4s forwards;
   }
 
-  /* Spritzer um den Hauptfleck */
   .splat-drip {
     position: absolute;
     background: #d63031;
@@ -605,61 +386,119 @@
     70% { opacity: 0.8; }
     100% { opacity: 0; transform: scale(0.9) translateY(15px); }
   }
+
+  /* 2. SPIELFELD 4-GEWINNT */
+  .game-container {
+    text-align: center;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #eef2f7;
+    border-radius: 16px;
+    max-width: 380px;
+    margin: 40px auto;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+
+  .status-text {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 12px;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    background-color: #0984e3;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: inset 0 4px 8px rgba(0,0,0,0.3);
+  }
+
+  .cell {
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: #eef2f7;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.2);
+    transition: background-color 0.2s ease, transform 0.1s;
+  }
+
+  .cell:hover { transform: scale(1.05); }
+  .cell.red { background-color: #ff7675; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+  .cell.yellow { background-color: #fdcb6e; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+  .restart-btn {
+    margin-top: 15px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    background-color: #00b894;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
 </style>
 
-<!-- Infoleiste oben rechts -->
+<!-- TOMATEN LEISTE ANZEIGE -->
 <div class="tomato-bar">
-  <span>🍅 Tomaten geworfen: <strong id="tomato-count" style="color: #ff4757;">0</strong></span>
+  <span>🍅 Tomaten: <strong id="tomato-count" style="color: #ff4757;">0</strong></span>
   <span>| 👀 Besuche: <strong id="counter-value">...</strong></span>
   <button class="tomato-btn" id="toggle-tomato-btn">Schmeiß-Modus: AN</button>
 </div>
 
+<!-- 4 GEWINNT SPIELFELD -->
+<div class="game-container">
+  <h3>🔴 4 Gewinnt gegen KI 🟡</h3>
+  <div class="status-text" id="status">Du bist dran (Rot)!</div>
+  
+  <div class="board" id="board"></div>
+
+  <button class="restart-btn" onclick="resetGame()">Neues Spiel starten</button>
+</div>
+
 <script>
+  // --- EINZIGER AUDIO CONTEXT FÜR BEIDE SPIELE ---
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // --- 1. TOMATEN WERFEN LOGIK ---
   let tomatoCount = 0;
   let tomatoMode = true;
 
   const countEl = document.getElementById('tomato-count');
   const toggleBtn = document.getElementById('toggle-tomato-btn');
 
-  // Ein/Ausschalten des Tomaten-Modus
   toggleBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // Verhindert, dass beim Klick auf den Button eine Tomate fliegt
+    e.stopPropagation();
     tomatoMode = !tomatoMode;
     toggleBtn.innerText = `Schmeiß-Modus: ${tomatoMode ? 'AN' : 'AUS'}`;
     toggleBtn.style.background = tomatoMode ? '#ff4757' : '#74b9ff';
   });
 
-  // --- AUDIO SYNTHESIZER (Matsch-Sound) ---
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
   function playSplatSound() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
-
     const now = audioCtx.currentTime;
-
-    // Tiefer Matsch-Aufprall
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(180, now);
     osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
-
     gain.gain.setValueAtTime(0.4, now);
     gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
-
     osc.start(now);
     osc.stop(now + 0.15);
   }
 
-  // --- TOMATEN-WURF LOGIK ---
   document.addEventListener('click', (e) => {
     if (!tomatoMode) return;
-
-    // Klicks auf Buttons/Links nicht mit Tomaten blockieren
-    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('.tomato-bar')) return;
+    // Klicks auf Buttons/Spielfeld von 4 Gewinnt abfangen, damit das Spiel benutzbar bleibt!
+    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('cell') || e.target.closest('.tomato-bar')) return;
 
     tomatoCount++;
     countEl.innerText = tomatoCount;
@@ -667,7 +506,6 @@
     const targetX = e.clientX;
     const targetY = e.clientY;
 
-    // 1. Die Tomate fliegt von unten los
     const tomato = document.createElement('div');
     tomato.className = 'flying-tomato';
     tomato.innerText = '🍅';
@@ -675,58 +513,212 @@
     tomato.style.top = (window.innerHeight + 50) + 'px';
     document.body.appendChild(tomato);
 
-    // Flug-Animation Richtung Klick-Position
     requestAnimationFrame(() => {
       tomato.style.top = (targetY - 20) + 'px';
       tomato.style.transform = 'rotate(360deg) scale(1.3)';
     });
 
-    // 2. Aufprall (Splat) nach 300ms Flugzeit
     setTimeout(() => {
       tomato.remove();
       playSplatSound();
       if (navigator.vibrate) navigator.vibrate(50);
-
       createSplatMark(targetX, targetY);
     }, 300);
   });
 
-  // 3. Matsch-Fleck (Splat) erstellen
   function createSplatMark(x, y) {
     const splat = document.createElement('div');
     splat.className = 'splat-mark';
-    
-    const size = Math.random() * 40 + 60; // Größe zwischen 60px und 100px
+    const size = Math.random() * 40 + 60;
     splat.style.width = size + 'px';
     splat.style.height = size + 'px';
     splat.style.left = (x - size / 2) + 'px';
     splat.style.top = (y - size / 2) + 'px';
 
-    // Kleine Tropfen/Spritzer rundherum
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
       const drip = document.createElement('div');
       drip.className = 'splat-drip';
-      const dripSize = Math.random() * 10 + 6;
+      const dripSize = Math.random() * 8 + 5;
       drip.style.width = dripSize + 'px';
       drip.style.height = dripSize + 'px';
-
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * (size / 1.5) + 10;
       drip.style.left = (size / 2 + Math.cos(angle) * dist) + 'px';
       drip.style.top = (size / 2 + Math.sin(angle) * dist) + 'px';
-
       splat.appendChild(drip);
     }
-
     document.body.appendChild(splat);
-
-    // Nach 4 Sekunden aufräumen
     setTimeout(() => splat.remove(), 4000);
   }
 
-  // --- ÖFFENTLICHER BESUCHERZÄHLER ---
-  const UNIQUE_KEY = 'mein-einzigartiger-schluessel-12345';
+  // --- 2. 4 GEWINNT LOGIK ---
+  const ROWS = 6;
+  const COLS = 7;
+  let boardState = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+  let gameOver = false;
 
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+
+  function playDropSound(isRed) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(isRed ? 320 : 240, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.12);
+  }
+
+  function createBoard() {
+    boardEl.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation(); // Verhindert Tomatenwurf beim Klicken auf das Spielfeld
+          handlePlayerMove(c);
+        });
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function updateBoardUI() {
+    const cells = boardEl.children;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const index = r * COLS + c;
+        cells[index].className = 'cell';
+        if (boardState[r][c] === 1) cells[index].classList.add('red');
+        if (boardState[r][c] === 2) cells[index].classList.add('yellow');
+      }
+    }
+  }
+
+  function dropDisc(col, player) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (boardState[r][col] === 0) {
+        boardState[r][col] = player;
+        playDropSound(player === 1);
+        return r;
+      }
+    }
+    return -1;
+  }
+
+  function handlePlayerMove(col) {
+    if (gameOver) return;
+    const rowPlaced = dropDisc(col, 1);
+    if (rowPlaced === -1) return;
+
+    updateBoardUI();
+
+    if (checkWin(1)) {
+      statusEl.innerText = "🎉 Du hast gewonnen!";
+      gameOver = true;
+      return;
+    }
+    if (isBoardFull()) {
+      statusEl.innerText = "🤝 Unentschieden!";
+      gameOver = true;
+      return;
+    }
+
+    statusEl.innerText = "🤖 KI überlegt...";
+    gameOver = true;
+    setTimeout(aiMove, 500);
+  }
+
+  function aiMove() {
+    let bestCol = findSmartMove(2);
+    if (bestCol === -1) bestCol = findSmartMove(1);
+    if (bestCol === -1) {
+      const validCols = [];
+      for (let c = 0; c < COLS; c++) if (boardState[0][c] === 0) validCols.push(c);
+      bestCol = validCols[Math.floor(Math.random() * validCols.length)];
+    }
+
+    dropDisc(bestCol, 2);
+    updateBoardUI();
+
+    if (checkWin(2)) {
+      statusEl.innerText = "🤖 Die KI hat gewonnen!";
+    } else if (isBoardFull()) {
+      statusEl.innerText = "🤝 Unentschieden!";
+    } else {
+      statusEl.innerText = "Du bist dran (Rot)!";
+      gameOver = false;
+    }
+  }
+
+  function findSmartMove(player) {
+    for (let c = 0; c < COLS; c++) {
+      if (boardState[0][c] === 0) {
+        let rPlaced = -1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (boardState[r][c] === 0) {
+            boardState[r][c] = player;
+            rPlaced = r;
+            break;
+          }
+        }
+        const win = checkWin(player);
+        boardState[rPlaced][c] = 0;
+        if (win) return c;
+      }
+    }
+    return -1;
+  }
+
+  function checkWin(player) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (boardState[r][c] === player && boardState[r][c+1] === player &&
+            boardState[r][c+2] === player && boardState[r][c+3] === player) return true;
+      }
+    }
+    for (let r = 0; r < ROWS - 3; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (boardState[r][c] === player && boardState[r+1][c] === player &&
+            boardState[r+2][c] === player && boardState[r+3][c] === player) return true;
+      }
+    }
+    for (let r = 0; r < ROWS - 3; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (boardState[r][c] === player && boardState[r+1][c+1] === player &&
+            boardState[r+2][c+2] === player && boardState[r+3][c+3] === player) return true;
+      }
+    }
+    for (let r = 3; r < ROWS; r++) {
+      for (let c = 0; c < COLS - 3; c++) {
+        if (boardState[r][c] === player && boardState[r-1][c+1] === player &&
+            boardState[r-2][c+2] === player && boardState[r-3][c+3] === player) return true;
+      }
+    }
+    return false;
+  }
+
+  function isBoardFull() {
+    return boardState[0].every(cell => cell !== 0);
+  }
+
+  function resetGame() {
+    boardState = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+    gameOver = false;
+    statusEl.innerText = "Du bist dran (Rot)!";
+    updateBoardUI();
+  }
+
+  createBoard();
+
+  // --- 3. EINZELNER BESUCHERZÄHLER ---
+  const UNIQUE_KEY = 'mein-einzigartiger-schluessel-12345';
   fetch(`https://countapi.mileshilliard.com/api/v1/hit/${UNIQUE_KEY}`)
     .then(res => res.json())
     .then(data => {
@@ -736,4 +728,5 @@
       document.getElementById('counter-value').innerText = "1";
     });
 </script>
+
 
